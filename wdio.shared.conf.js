@@ -1,0 +1,91 @@
+const path = require('node:path');
+const fs = require('node:fs');
+const allure = require('@wdio/allure-reporter').default;
+
+function ensureDir(dirPath) {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
+
+const ARTIFACTS_DIR = path.join(process.cwd(), 'artifacts');
+const SCREENSHOTS_DIR = path.join(ARTIFACTS_DIR, 'screenshots');
+const LOGS_DIR = path.join(ARTIFACTS_DIR, 'logs');
+
+ensureDir(SCREENSHOTS_DIR);
+ensureDir(LOGS_DIR);
+
+exports.config = {
+  runner: 'local',
+  framework: 'mocha',
+  mochaOpts: {
+    ui: 'bdd',
+    timeout: 120000,
+  },
+
+  specs: ['./test/specs/**/*.spec.js'],
+
+  logLevel: 'info',
+  waitforTimeout: 20000,
+  connectionRetryTimeout: 180000,
+  connectionRetryCount: 2,
+
+  reporters: [
+    'spec',
+    [
+      'allure',
+      {
+        outputDir: 'allure-results',
+        disableWebdriverStepsReporting: false,
+        disableWebdriverScreenshotsReporting: false,
+      },
+    ],
+  ],
+
+  /**
+   * Evidências:
+   * - screenshot em cada falha (Allure + arquivo em artifacts/)
+   * - logs básicos em artifacts/logs/
+   */
+  afterTest: async function (test, context, { error, passed }) {
+    if (passed) return;
+
+    const ts = new Date().toISOString().replaceAll(':', '-');
+    const safeTitle = String(test.title || 'test')
+      .replaceAll(/[^\w\d\-_. ]+/g, '')
+      .trim()
+      .replaceAll(' ', '_')
+      .slice(0, 120);
+
+    const filename = `${ts}__${safeTitle}.png`;
+    const filepath = path.join(SCREENSHOTS_DIR, filename);
+
+    try {
+      await browser.saveScreenshot(filepath);
+      allure.addAttachment('Screenshot (falha)', fs.readFileSync(filepath), 'image/png');
+    } catch (e) {
+      // se a sessão caiu, não queremos mascarar o erro original do teste
+    }
+
+    try {
+      const caps = await browser.getCapabilities();
+      allure.addAttachment('Capabilities', JSON.stringify(caps, null, 2), 'application/json');
+    } catch (e) {}
+
+    try {
+      // Appium server log nem sempre é acessível; registramos pelo menos URL e sessionId
+      const meta = {
+        sessionId: browser.sessionId,
+        config: {
+          baseUrl: this.baseUrl,
+        },
+      };
+      const logFile = path.join(LOGS_DIR, `${ts}__${safeTitle}.json`);
+      fs.writeFileSync(logFile, JSON.stringify(meta, null, 2));
+      allure.addAttachment('Execução (meta)', JSON.stringify(meta, null, 2), 'application/json');
+    } catch (e) {}
+
+    if (error) {
+      allure.addAttachment('Erro', String(error && error.stack ? error.stack : error), 'text/plain');
+    }
+  },
+};
+
