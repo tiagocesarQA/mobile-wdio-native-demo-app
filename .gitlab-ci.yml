@@ -1,7 +1,7 @@
 workflow:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
 
 stages:
   - test
@@ -15,13 +15,14 @@ cache:
     - .npm/
 
 # Os testes E2E mobile necessitam de simulador/emulador local ou de credenciais BrowserStack.
-# Configure variáveis no GitLab (Settings → CI/CD → Variables).
+# BrowserStack: BROWSERSTACK_USERNAME + BROWSERSTACK_ACCESS_KEY (obrigatórias para o job e2e_browserstack_android).
+# BROWSERSTACK_APP_URL é opcional (por defeito no wdio.browserstack.conf.js).
 
 e2e_browserstack_android:
   stage: test
   image: node:20-bookworm
   rules:
-    - if: $BROWSERSTACK_USERNAME && $BROWSERSTACK_ACCESS_KEY && $BROWSERSTACK_APP_URL
+    - if: '$BROWSERSTACK_USERNAME && $BROWSERSTACK_ACCESS_KEY'
   script:
     - npm ci --cache "$NPM_CACHE_FOLDER"
     - npm run test:bs
@@ -37,13 +38,11 @@ e2e_android_local_emulator:
   image: node:20-bookworm
   rules:
     - when: manual
-      allow_failure: true
+  allow_failure: true
   script:
-    - echo "Requer runner com Android SDK, emulador e Appium. Em alternativa, execute localmente: npm run test:android"
+    - 'echo "Requer runner com Android SDK, emulador e Appium. Em alternativa, execute localmente: npm run test:android"'
     - mkdir -p apps
-    - |
-      curl -fsSL -o apps/android.wdio.native.app.v2.2.0.apk \
-        "https://github.com/webdriverio/native-demo-app/releases/download/v2.2.0/android.wdio.native.app.v2.2.0.apk"
+    - curl -fsSL -o apps/android.wdio.native.app.v2.2.0.apk "https://github.com/webdriverio/native-demo-app/releases/download/v2.2.0/android.wdio.native.app.v2.2.0.apk"
     - npm ci --cache "$NPM_CACHE_FOLDER"
     - export ANDROID_APP_PATH="$CI_PROJECT_DIR/apps/android.wdio.native.app.v2.2.0.apk"
     - npm run test:android
