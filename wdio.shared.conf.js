@@ -70,12 +70,10 @@ exports.config = {
 
   /**
    * Evidências:
-   * - screenshot em cada falha (Allure + arquivo em artifacts/)
-   * - logs básicos em artifacts/logs/
+   * - screenshot no final de cada teste (Allure + artifacts/screenshots) — pass ou fail
+   * - em falha: anexos extra (capabilities, meta, stack)
    */
   afterTest: async function (test, context, { error, passed }) {
-    if (passed) return;
-
     const ts = new Date().toISOString().replaceAll(':', '-');
     const safeTitle = String(test.title || 'test')
       .replaceAll(/[^\w\d\-_. ]+/g, '')
@@ -83,14 +81,18 @@ exports.config = {
       .replaceAll(' ', '_')
       .slice(0, 120);
 
-    const filename = `${ts}__${safeTitle}.png`;
+    const filename = `${ts}__${safeTitle}__${passed ? 'pass' : 'fail'}.png`;
     const filepath = path.join(SCREENSHOTS_DIR, filename);
 
     try {
       await browser.saveScreenshot(filepath);
-      allure.addAttachment('Screenshot (falha)', fs.readFileSync(filepath), 'image/png');
+      allure.addAttachment('Screenshot (final do teste)', fs.readFileSync(filepath), 'image/png');
     } catch (e) {
-      // se a sessão caiu, não queremos mascarar o erro original do teste
+      // sessão já terminou (ex.: teardown)
+    }
+
+    if (passed) {
+      return;
     }
 
     try {
@@ -99,7 +101,6 @@ exports.config = {
     } catch (e) {}
 
     try {
-      // Appium server log nem sempre é acessível; registramos pelo menos URL e sessionId
       const meta = {
         sessionId: browser.sessionId,
       };

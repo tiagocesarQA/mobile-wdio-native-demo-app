@@ -22,22 +22,47 @@ describe('Navegação entre telas', () => {
 
     await TabBar.openSwipe();
     await SwipeScreen.waitForIsShown(true);
-    for (let i = 0; i < 10; i++) {
-      if ((await SwipeScreen.logo.isExisting()) && (await SwipeScreen.logo.isDisplayed())) break;
-      try {
-        await driver.execute('mobile: swipe', { direction: 'left' });
-      } catch {
+
+    if (driver.isIOS) {
+      for (let i = 0; i < 10; i++) {
+        if ((await SwipeScreen.logo.isExisting()) && (await SwipeScreen.logo.isDisplayed())) {
+          break;
+        }
         try {
-          await driver.execute('mobile:swipe', { direction: 'left' });
+          await driver.execute('mobile: swipe', { direction: 'left' });
         } catch {
-          await browser.pause(200);
+          try {
+            await driver.execute('mobile:swipe', { direction: 'left' });
+          } catch {
+            await browser.pause(200);
+          }
         }
       }
+      expect(await SwipeScreen.logo.isExisting()).to.equal(
+        true,
+        'elemento WebdriverIO logo deve existir no ecrã Swipe',
+      );
+    } else {
+      await browser.waitUntil(
+        async () =>
+          (await SwipeScreen.androidSwipeHeading.isExisting()) ||
+          (await SwipeScreen.androidFirstCarouselTitle.isExisting()),
+        {
+          timeout: 25000,
+          timeoutMsg:
+            'ecrã Swipe deve estar pronto (cabeçalho ou primeiro slide) antes do carrossel horizontal',
+        },
+      );
+      await browser.pause(900);
+      await SwipeScreen.swipeCarouselToLastSlideAndroid();
+      const lastOk =
+        (await SwipeScreen.androidLastCarouselTitle.isExisting()) ||
+        (await SwipeScreen.androidLastCarouselSubtitle.isExisting());
+      expect(lastOk).to.equal(
+        true,
+        'último slide do carrossel deve ficar visível após swipes horizontais (título ou subtítulo)',
+      );
     }
-    expect(await SwipeScreen.logo.isExisting()).to.equal(
-      true,
-      'elemento WebdriverIO logo deve existir no ecrã Swipe',
-    );
 
     await TabBar.openHome();
     await HomeScreen.waitForIsShown(true);

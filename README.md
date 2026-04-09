@@ -33,8 +33,18 @@ Variáveis opcionais para caminhos customizados:
 
 Ajuste também o nome/versão do dispositivo virtual:
 
-- Android: `ANDROID_DEVICE_NAME`, `ANDROID_PLATFORM_VERSION`
+- Android: `ANDROID_DEVICE_NAME` (por defeito **`emulator-5554`** — confirma com `adb devices`), `ANDROID_PLATFORM_VERSION` (opcional)
 - iOS: `IOS_DEVICE_NAME`, `IOS_PLATFORM_VERSION` (por defeito no projeto: **iPhone 17** + **26.4**, alinhado ao simulador local comum em Xcode recente)
+
+### Android (emulador)
+
+1. Instala o APK uma vez no AVD (arrastar para o emulador, ou `adb install apps/android.wdio.native.app.v2.2.0.apk`).
+2. Corre os testes **sem reinstalar** (comportamento por defeito): `appPackage` / `appActivity` + `noReset: true`.
+3. Para forçar instalação via Appium nessa corrida:  
+   `export ANDROID_APP_PATH="$PWD/apps/android.wdio.native.app.v2.2.0.apk"` e corre `npm run test:android`.  
+   Opcional: `ANDROID_NO_RESET_WITH_APK=1` mantém dados após instalar por cima.
+
+Appium **UiAutomator2** tem de estar instalado: `appium driver install uiautomator2`.
 
 ## Execução
 

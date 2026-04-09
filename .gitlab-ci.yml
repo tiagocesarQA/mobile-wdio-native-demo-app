@@ -45,6 +45,7 @@ e2e_android_local_emulator:
       curl -fsSL -o apps/android.wdio.native.app.v2.2.0.apk \
         "https://github.com/webdriverio/native-demo-app/releases/download/v2.2.0/android.wdio.native.app.v2.2.0.apk"
     - npm ci --cache "$NPM_CACHE_FOLDER"
+    - export ANDROID_APP_PATH="$CI_PROJECT_DIR/apps/android.wdio.native.app.v2.2.0.apk"
     - npm run test:android
   artifacts:
     when: always
