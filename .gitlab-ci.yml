@@ -40,12 +40,15 @@ e2e_android_local_emulator:
     - when: manual
   allow_failure: true
   script:
-    - 'echo "Requer runner com Android SDK, emulador e Appium. Em alternativa, execute localmente: npm run test:android"'
-    - mkdir -p apps
-    - curl -fsSL -o apps/android.wdio.native.app.v2.2.0.apk "https://github.com/webdriverio/native-demo-app/releases/download/v2.2.0/android.wdio.native.app.v2.2.0.apk"
-    - npm ci --cache "$NPM_CACHE_FOLDER"
-    - export ANDROID_APP_PATH="$CI_PROJECT_DIR/apps/android.wdio.native.app.v2.2.0.apk"
-    - npm run test:android
+    - |
+      set -e
+      echo "Requer runner com Android SDK, emulador e Appium. Em alternativa, execute localmente: npm run test:android"
+      mkdir -p apps
+      curl -fsSL -o apps/android.wdio.native.app.v2.2.0.apk \
+        "https://github.com/webdriverio/native-demo-app/releases/download/v2.2.0/android.wdio.native.app.v2.2.0.apk"
+      npm ci --cache "$NPM_CACHE_FOLDER"
+      export ANDROID_APP_PATH="$CI_PROJECT_DIR/apps/android.wdio.native.app.v2.2.0.apk"
+      npm run test:android
   artifacts:
     when: always
     paths:
