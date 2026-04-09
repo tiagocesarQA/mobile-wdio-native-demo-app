@@ -15,10 +15,13 @@ ensureDir(LOGS_DIR);
 
 exports.config = {
   runner: 'local',
+  /** Um único worker: um simulador/dispositivo não suporta várias sessões Appium em paralelo. */
+  maxInstances: 1,
   framework: 'mocha',
   mochaOpts: {
     ui: 'bdd',
     timeout: 120000,
+    require: ['./test/helpers/chai-setup.js'],
   },
 
   specs: ['./test/specs/**/*.spec.js'],
@@ -39,6 +42,31 @@ exports.config = {
       },
     ],
   ],
+
+  before: async function () {
+    try {
+      if (browser.isAndroid) {
+        await browser.updateSettings({ waitForSelectorTimeout: 3000 });
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    try {
+      const caps = await browser.getCapabilities();
+      const c = caps.capabilities || caps;
+      allure.addEnvironment('platformName', String(c.platformName ?? ''));
+      allure.addEnvironment('device', String(c['appium:deviceName'] ?? c.deviceName ?? ''));
+      allure.addEnvironment(
+        'platformVersion',
+        String(c['appium:platformVersion'] ?? c.platformVersion ?? ''),
+      );
+      allure.addEnvironment('automationName', String(c['appium:automationName'] ?? ''));
+      allure.addEnvironment('Node', process.version);
+    } catch (e) {
+      // ignore
+    }
+  },
 
   /**
    * Evidências:
@@ -74,9 +102,6 @@ exports.config = {
       // Appium server log nem sempre é acessível; registramos pelo menos URL e sessionId
       const meta = {
         sessionId: browser.sessionId,
-        config: {
-          baseUrl: this.baseUrl,
-        },
       };
       const logFile = path.join(LOGS_DIR, `${ts}__${safeTitle}.json`);
       fs.writeFileSync(logFile, JSON.stringify(meta, null, 2));
