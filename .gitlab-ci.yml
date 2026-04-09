@@ -24,7 +24,8 @@ e2e_browserstack_android:
   rules:
     - if: '$BROWSERSTACK_USERNAME && $BROWSERSTACK_ACCESS_KEY'
   script:
-    - npm ci --cache "$NPM_CACHE_FOLDER"
+    - mkdir -p allure-results artifacts
+    - npm install --no-audit --no-fund --cache "$NPM_CACHE_FOLDER"
     - npm run test:bs
   artifacts:
     when: always
@@ -39,16 +40,15 @@ e2e_android_local_emulator:
   rules:
     - when: manual
   allow_failure: true
-  script:
-    - |
-      set -e
-      echo "Requer runner com Android SDK, emulador e Appium. Em alternativa, execute localmente: npm run test:android"
-      mkdir -p apps
-      curl -fsSL -o apps/android.wdio.native.app.v2.2.0.apk \
-        "https://github.com/webdriverio/native-demo-app/releases/download/v2.2.0/android.wdio.native.app.v2.2.0.apk"
-      npm ci --cache "$NPM_CACHE_FOLDER"
-      export ANDROID_APP_PATH="$CI_PROJECT_DIR/apps/android.wdio.native.app.v2.2.0.apk"
-      npm run test:android
+  script: |
+    set -e
+    mkdir -p allure-results artifacts
+    echo "Requer runner com Android SDK, emulador e Appium. Em alternativa, execute localmente: npm run test:android"
+    mkdir -p apps
+    curl -fsSL -o apps/android.wdio.native.app.v2.2.0.apk "https://github.com/webdriverio/native-demo-app/releases/download/v2.2.0/android.wdio.native.app.v2.2.0.apk"
+    npm install --no-audit --no-fund --cache "$NPM_CACHE_FOLDER"
+    export ANDROID_APP_PATH="$CI_PROJECT_DIR/apps/android.wdio.native.app.v2.2.0.apk"
+    npm run test:android
   artifacts:
     when: always
     paths:
